@@ -62,6 +62,21 @@ type ReviewChecklistRow = {
   reviewed_at: string | null;
 };
 
+const reviewChecklistUpdateSchema = z
+  .object({
+    source_approved: z.boolean().optional(),
+    no_personalized_advice: z.boolean().optional(),
+    no_product_recommendation: z.boolean().optional(),
+    claims_supported: z.boolean().optional(),
+    audience_appropriate: z.boolean().optional(),
+    disclaimer_present: z.boolean().optional(),
+    respectful_feedback: z.boolean().optional(),
+    public_metadata_accurate: z.boolean().optional(),
+    warnings_acknowledged: z.boolean().optional()
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, "At least one checklist value is required.");
+
 type SourceMaterialInput = {
   title: string;
   sourceText: string;
@@ -232,6 +247,18 @@ export async function listPublicLessons() {
     .order("published_at", { ascending: false });
 
   assertSupabaseSuccess(error, "Failed to list public lessons");
+
+  return (data as LessonRow[]).map(mapLessonRow);
+}
+
+export async function listStudioLessons() {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("lessons")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  assertSupabaseSuccess(error, "Failed to list studio lessons");
 
   return (data as LessonRow[]).map(mapLessonRow);
 }
@@ -416,4 +443,86 @@ export async function publicSlugExists(candidate: string) {
 
 export async function allocatePublicSlug(title: string) {
   return nextAvailableSlug(title, publicSlugExists);
+}
+
+export async function updateLessonContent(lessonId: string, content: LessonContent) {
+  const supabase = createServiceClient();
+  const validatedContent = lessonContentSchema.parse(content);
+  const updatedAt = new Date().toISOString();
+
+  const { error: contentError } = await supabase
+    .from("lesson_content")
+    .update({
+      content: validatedContent,
+      updated_at: updatedAt
+    })
+    .eq("lesson_id", lessonId);
+
+  assertSupabaseSuccess(contentError, "Failed to update lesson content");
+
+  const { error: lessonError } = await supabase
+    .from("lessons")
+    .update({
+      title: validatedContent.title,
+      summary: validatedContent.summary,
+      category: validatedContent.category,
+      tags: validatedContent.tags,
+      target_audience: validatedContent.targetAudience,
+      disclaimer: validatedContent.disclaimer,
+      updated_at: updatedAt
+    })
+    .eq("id", lessonId);
+
+  assertSupabaseSuccess(lessonError, "Failed to update lesson metadata");
+}
+
+export async function updateReviewChecklist(lessonId: string, values: Record<string, boolean>) {
+  const supabase = createServiceClient();
+  const checklistValues = reviewChecklistUpdateSchema.parse(values);
+
+  const { error } = await supabase
+    .from("review_checklists")
+    .update({
+      ...checklistValues,
+      reviewed_at: new Date().toISOString()
+    })
+    .eq("lesson_id", lessonId);
+
+  assertSupabaseSuccess(error, "Failed to update review checklist");
+}
+
+export async function publishLesson(lessonId: string, visibility: "public" | "unlisted") {
+  const supabase = createServiceClient();
+  const lesson = await getStudioLesson(lessonId);
+
+  if (!lesson) {
+    throw new Error("Lesson not found.");
+  }
+
+  const slug = lesson.metadata.publicSlug ?? (await allocatePublicSlug(lesson.metadata.title));
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("lessons")
+    .update({
+      status: "published",
+      visibility,
+      public_slug: slug,
+      published_at: now,
+      updated_at: now
+    })
+    .eq("id", lessonId)
+    .select("public_slug")
+    .single();
+
+  assertSupabaseSuccess(error, "Failed to publish lesson");
+
+  const published = data as { public_slug: string | null } | null;
+  assertSupabaseData(published, "Failed to publish lesson");
+
+  if (!published.public_slug) {
+    throw new Error("Failed to publish lesson: no slug returned");
+  }
+
+  return published.public_slug;
 }
