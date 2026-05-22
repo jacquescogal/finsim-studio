@@ -12,7 +12,8 @@ insert into public.lessons (
   visibility,
   public_slug,
   disclaimer,
-  publisher_display_name
+  publisher_display_name,
+  published_at
 ) values (
   '00000000-0000-4000-8000-000000000001',
   'Checking Before Acting',
@@ -23,61 +24,30 @@ insert into public.lessons (
   'en',
   'introductory',
   'older_adult',
-  'draft',
-  'private',
-  null,
+  'published',
+  'public',
+  'checking-before-acting',
   'This lesson is for education only. It does not provide personal financial advice.',
-  'Community Financial Learning Lab'
-)
-on conflict (id) do update set
-  title = excluded.title,
-  summary = excluded.summary,
-  topic = excluded.topic,
-  category = excluded.category,
-  tags = excluded.tags,
-  language = excluded.language,
-  difficulty = excluded.difficulty,
-  target_audience = excluded.target_audience,
-  status = excluded.status,
-  visibility = excluded.visibility,
-  public_slug = excluded.public_slug,
-  disclaimer = excluded.disclaimer,
-  publisher_display_name = excluded.publisher_display_name,
-  updated_at = now();
+  'Community Financial Learning Lab',
+  now()
+) on conflict (id) do nothing;
 
-insert into public.source_materials (
-  id,
-  lesson_id,
-  title,
-  source_text,
-  approved
-) values (
-  '00000000-0000-4000-8000-000000000002',
+insert into public.source_materials (lesson_id, title, source_text, approved) values (
   '00000000-0000-4000-8000-000000000001',
-  'Sample scam awareness source',
-  'Messages promising high returns with no risk should be checked before acting. Take time to compare suspicious messages with official guidance or a trusted source.',
+  'Approved scam prevention guide',
+  'Messages promising high returns with no risk should be treated as suspicious. Take time to check with official sources or a trusted person before transferring money.',
   true
-)
-on conflict (id) do update set
-  title = excluded.title,
-  source_text = excluded.source_text,
-  approved = excluded.approved;
+) on conflict do nothing;
 
-insert into public.lesson_content (
-  lesson_id,
-  content,
-  generation_model,
-  generation_warnings
-) values (
+insert into public.lesson_content (lesson_id, generation_model, generation_warnings, content) values (
   '00000000-0000-4000-8000-000000000001',
+  'seed',
+  '{}',
   '{
     "title": "Checking Before Acting",
     "summary": "A short scenario about spotting suspicious investment messages.",
-    "sourceSummary": "Messages promising high returns with no risk should be checked before acting.",
-    "learningObjectives": [
-      "Identify warning signs in suspicious financial messages",
-      "Practice checking with a trusted source before transferring money"
-    ],
+    "sourceSummary": "High returns with no risk and pressure to act quickly are warning signs.",
+    "learningObjectives": ["Identify warning signs in suspicious messages", "Practice checking before transferring money"],
     "targetAudience": "older_adult",
     "readingLevel": "simple",
     "category": "Scams",
@@ -91,18 +61,8 @@ insert into public.lesson_content (
         "visualPrompt": "Older adult reading a phone message at a kitchen table",
         "sourceRefs": ["source:paragraph_1"],
         "choices": [
-          {
-            "id": "choice_1",
-            "label": "Reply and ask how to invest",
-            "feedback": "This may lead to more pressure. High returns with no risk is a warning sign.",
-            "nextSceneId": "scene_2"
-          },
-          {
-            "id": "choice_2",
-            "label": "Check with a trusted source first",
-            "feedback": "Checking before acting helps reduce scam risk.",
-            "nextSceneId": "scene_2"
-          }
+          { "id": "choice_1", "label": "Reply and ask how to invest", "feedback": "This may lead to more pressure. High returns with no risk is a warning sign.", "nextSceneId": "scene_2" },
+          { "id": "choice_2", "label": "Check with a trusted source first", "feedback": "Checking before acting helps reduce scam risk.", "nextSceneId": "scene_2" }
         ]
       },
       {
@@ -111,36 +71,18 @@ insert into public.lesson_content (
         "body": "Mr. Tan pauses and compares the message with official guidance before doing anything.",
         "sourceRefs": ["source:paragraph_2"],
         "choices": [
-          {
-            "id": "choice_3",
-            "label": "Continue",
-            "feedback": "Taking time creates space to make a safer decision.",
-            "nextSceneId": null
-          }
+          { "id": "choice_3", "label": "Continue", "feedback": "Taking time creates space to make a safer decision.", "nextSceneId": null }
         ]
       }
     ],
     "reflectionPrompts": ["What warning sign would you discuss with the group?"],
     "knowledgeChecks": [
-      {
-        "id": "check_1",
-        "question": "Which phrase is a warning sign?",
-        "options": ["Guaranteed high return", "Take time to check", "Ask someone trusted"],
-        "correctOption": "Guaranteed high return",
-        "feedback": "Promises of guaranteed high returns can be a scam warning sign."
-      }
+      { "id": "check_1", "question": "Which phrase is a warning sign?", "options": ["Guaranteed high return", "Take time to check", "Ask someone trusted"], "correctOption": "Guaranteed high return", "feedback": "Promises of guaranteed high returns can be a scam warning sign." }
     ],
     "disclaimer": "This lesson is for education only. It does not provide personal financial advice.",
     "safetyWarnings": []
-  }'::jsonb,
-  null,
-  '{}'
-)
-on conflict (lesson_id) do update set
-  content = excluded.content,
-  generation_model = excluded.generation_model,
-  generation_warnings = excluded.generation_warnings,
-  updated_at = now();
+  }'::jsonb
+) on conflict (lesson_id) do nothing;
 
 insert into public.review_checklists (
   lesson_id,
@@ -152,7 +94,8 @@ insert into public.review_checklists (
   disclaimer_present,
   respectful_feedback,
   public_metadata_accurate,
-  warnings_acknowledged
+  warnings_acknowledged,
+  reviewed_at
 ) values (
   '00000000-0000-4000-8000-000000000001',
   true,
@@ -163,15 +106,6 @@ insert into public.review_checklists (
   true,
   true,
   true,
-  true
-)
-on conflict (lesson_id) do update set
-  source_approved = excluded.source_approved,
-  no_personalized_advice = excluded.no_personalized_advice,
-  no_product_recommendation = excluded.no_product_recommendation,
-  claims_supported = excluded.claims_supported,
-  audience_appropriate = excluded.audience_appropriate,
-  disclaimer_present = excluded.disclaimer_present,
-  respectful_feedback = excluded.respectful_feedback,
-  public_metadata_accurate = excluded.public_metadata_accurate,
-  warnings_acknowledged = excluded.warnings_acknowledged;
+  true,
+  now()
+) on conflict (lesson_id) do nothing;
