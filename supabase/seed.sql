@@ -32,12 +32,13 @@ insert into public.lessons (
   now()
 ) on conflict (id) do nothing;
 
-insert into public.source_materials (lesson_id, title, source_text, approved) values (
+insert into public.source_materials (id, lesson_id, title, source_text, approved) values (
+  '00000000-0000-4000-8000-000000000002',
   '00000000-0000-4000-8000-000000000001',
   'Approved scam prevention guide',
   'Messages promising high returns with no risk should be treated as suspicious. Take time to check with official sources or a trusted person before transferring money.',
   true
-) on conflict do nothing;
+) on conflict (id) do nothing;
 
 insert into public.lesson_content (lesson_id, generation_model, generation_warnings, content) values (
   '00000000-0000-4000-8000-000000000001',
