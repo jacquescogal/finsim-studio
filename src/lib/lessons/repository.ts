@@ -156,6 +156,12 @@ function assertSupabaseData<T>(data: T | null, action: string): asserts data is 
   }
 }
 
+function assertUpdatedRow<T>(data: T | null, message: string): asserts data is T {
+  if (!data) {
+    throw new Error(message);
+  }
+}
+
 async function deleteCreatedLessonAfterFailure(
   supabase: SupabaseServiceClient,
   lessonId: string,
@@ -451,17 +457,20 @@ export async function updateLessonContent(lessonId: string, content: LessonConte
   const validatedContent = lessonContentSchema.parse(content);
   const updatedAt = new Date().toISOString();
 
-  const { error: contentError } = await supabase
+  const { data: contentData, error: contentError } = await supabase
     .from("lesson_content")
     .update({
       content: validatedContent,
       updated_at: updatedAt
     })
-    .eq("lesson_id", lessonId);
+    .eq("lesson_id", lessonId)
+    .select("lesson_id")
+    .maybeSingle();
 
   assertSupabaseSuccess(contentError, "Failed to update lesson content");
+  assertUpdatedRow(contentData as { lesson_id: string } | null, "Lesson not found.");
 
-  const { error: lessonError } = await supabase
+  const { data: lessonData, error: lessonError } = await supabase
     .from("lessons")
     .update({
       title: validatedContent.title,
@@ -472,24 +481,30 @@ export async function updateLessonContent(lessonId: string, content: LessonConte
       disclaimer: validatedContent.disclaimer,
       updated_at: updatedAt
     })
-    .eq("id", lessonId);
+    .eq("id", lessonId)
+    .select("id")
+    .maybeSingle();
 
   assertSupabaseSuccess(lessonError, "Failed to update lesson metadata");
+  assertUpdatedRow(lessonData as { id: string } | null, "Lesson not found.");
 }
 
 export async function updateReviewChecklist(lessonId: string, values: Record<string, boolean>) {
   const supabase = createServiceClient();
   const checklistValues = reviewChecklistUpdateSchema.parse(values);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("review_checklists")
     .update({
       ...checklistValues,
       reviewed_at: new Date().toISOString()
     })
-    .eq("lesson_id", lessonId);
+    .eq("lesson_id", lessonId)
+    .select("lesson_id")
+    .maybeSingle();
 
   assertSupabaseSuccess(error, "Failed to update review checklist");
+  assertUpdatedRow(data as { lesson_id: string } | null, "Review checklist not found.");
 }
 
 export async function publishLesson(lessonId: string, visibility: "public" | "unlisted") {
