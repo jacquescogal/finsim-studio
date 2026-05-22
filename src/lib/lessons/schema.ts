@@ -16,8 +16,8 @@ export const sceneSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(120),
   body: z.string().min(1).max(900),
-  visualPrompt: z.string().max(240).optional(),
-  sourceRefs: z.array(z.string().min(1)).default([]),
+  visualPrompt: z.string().min(1).max(240).optional(),
+  sourceRefs: z.array(z.string().min(1)).max(12).default([]),
   choices: z.array(choiceSchema).min(1).max(3)
 });
 
@@ -27,6 +27,23 @@ export const knowledgeCheckSchema = z.object({
   options: z.array(z.string().min(1).max(140)).min(2).max(4),
   correctOption: z.string().min(1),
   feedback: z.string().min(1).max(400)
+}).superRefine((knowledgeCheck, context) => {
+  if (!knowledgeCheck.options.includes(knowledgeCheck.correctOption)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "correctOption must match one of the options",
+      path: ["correctOption"]
+    });
+  }
+
+  const optionSet = new Set(knowledgeCheck.options);
+  if (optionSet.size !== knowledgeCheck.options.length) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "options must be unique",
+      path: ["options"]
+    });
+  }
 });
 
 export const lessonContentSchema = z.object({
@@ -43,7 +60,44 @@ export const lessonContentSchema = z.object({
   reflectionPrompts: z.array(z.string().min(1).max(220)).max(4),
   knowledgeChecks: z.array(knowledgeCheckSchema).min(1).max(4),
   disclaimer: z.string().min(20).max(500),
-  safetyWarnings: z.array(z.string().min(1).max(240)).default([])
+  safetyWarnings: z.array(z.string().min(1).max(240)).max(5).default([])
+}).superRefine((lesson, context) => {
+  const sceneIds = new Set<string>();
+  const choiceIds = new Set<string>();
+
+  lesson.scenes.forEach((scene, sceneIndex) => {
+    if (sceneIds.has(scene.id)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "scene IDs must be unique",
+        path: ["scenes", sceneIndex, "id"]
+      });
+    }
+
+    sceneIds.add(scene.id);
+  });
+
+  lesson.scenes.forEach((scene, sceneIndex) => {
+    scene.choices.forEach((choice, choiceIndex) => {
+      if (choiceIds.has(choice.id)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "choice IDs must be unique within a lesson",
+          path: ["scenes", sceneIndex, "choices", choiceIndex, "id"]
+        });
+      }
+
+      choiceIds.add(choice.id);
+
+      if (choice.nextSceneId !== null && !sceneIds.has(choice.nextSceneId)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "nextSceneId must reference an existing scene",
+          path: ["scenes", sceneIndex, "choices", choiceIndex, "nextSceneId"]
+        });
+      }
+    });
+  });
 });
 
 export const lessonMetadataSchema = z.object({
@@ -57,9 +111,17 @@ export const lessonMetadataSchema = z.object({
   targetAudience: targetAudienceSchema,
   status: statusSchema,
   visibility: visibilitySchema,
-  publicSlug: z.string().min(1).max(140).nullable(),
+  publicSlug: z.string().min(1).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).nullable(),
   disclaimer: z.string().min(20).max(500),
   publisherDisplayName: z.string().min(1).max(120)
+}).superRefine((metadata, context) => {
+  if (metadata.status === "published" && metadata.visibility !== "private" && metadata.publicSlug === null) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "published public or unlisted lessons must have a publicSlug",
+      path: ["publicSlug"]
+    });
+  }
 });
 
 export type LessonContent = z.infer<typeof lessonContentSchema>;
