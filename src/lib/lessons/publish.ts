@@ -25,6 +25,10 @@ export type PublishInput = {
   checklist: ReviewChecklist;
 };
 
+type RuntimePublishInput = Partial<Omit<PublishInput, "checklist">> & {
+  checklist?: Partial<ReviewChecklist> | null;
+};
+
 const reviewChecklistKeys = [
   "sourceApproved",
   "noPersonalizedAdvice",
@@ -37,7 +41,7 @@ const reviewChecklistKeys = [
   "warningsAcknowledged"
 ] as const;
 
-export function canPublishLesson(input: PublishInput) {
+export function canPublishLesson(input: PublishInput | RuntimePublishInput) {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -46,12 +50,13 @@ export function canPublishLesson(input: PublishInput) {
 
   if (!metadata.success) errors.push("Lesson metadata is invalid.");
   if (!content.success) errors.push("Lesson content is invalid.");
-  if (input.sourceText.trim().length < 40) {
+  const sourceText = typeof input.sourceText === "string" ? input.sourceText : "";
+  if (sourceText.trim().length < 40) {
     errors.push("Approved source material is required.");
   }
 
   const checklistComplete = reviewChecklistKeys.every(
-    (key) => input.checklist[key] === true
+    (key) => input.checklist?.[key] === true
   );
   if (!checklistComplete) errors.push("All review checklist items must be completed.");
 

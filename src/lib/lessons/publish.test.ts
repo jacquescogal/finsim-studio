@@ -73,4 +73,16 @@ describe("canPublishLesson", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("All review checklist items must be completed.");
   });
+
+  it("returns gate errors for malformed runtime input", () => {
+    const result = canPublishLesson({
+      metadata: sampleLessonMetadata,
+      content: sampleLessonContent,
+      checklist: null
+    } as never);
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("Approved source material is required.");
+    expect(result.errors).toContain("All review checklist items must be completed.");
+  });
 });
