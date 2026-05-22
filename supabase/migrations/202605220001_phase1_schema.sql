@@ -13,6 +13,10 @@ create table if not exists public.lessons (
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
   visibility text not null default 'private' check (visibility in ('private', 'unlisted', 'public')),
   public_slug text unique,
+  constraint lessons_public_slug_format_check
+    check (public_slug is null or (char_length(public_slug) <= 140 and public_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')),
+  constraint lessons_published_visible_slug_required_check
+    check (status <> 'published' or visibility = 'private' or public_slug is not null),
   disclaimer text not null,
   publisher_display_name text not null default 'Community Financial Learning Lab',
   created_at timestamptz not null default now(),
@@ -79,7 +83,7 @@ alter table public.learner_sessions enable row level security;
 
 create policy "Public can read published visible lessons"
   on public.lessons for select
-  using (status = 'published' and visibility in ('public', 'unlisted'));
+  using (status = 'published' and visibility = 'public');
 
 create policy "Public can read content for published visible lessons"
   on public.lesson_content for select
@@ -88,6 +92,6 @@ create policy "Public can read content for published visible lessons"
       select 1 from public.lessons
       where lessons.id = lesson_content.lesson_id
       and lessons.status = 'published'
-      and lessons.visibility in ('public', 'unlisted')
+      and lessons.visibility = 'public'
     )
   );

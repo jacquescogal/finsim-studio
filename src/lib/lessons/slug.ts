@@ -5,7 +5,8 @@ export function createSlug(value: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
+    .slice(0, 120)
+    .replace(/^-+|-+$/g, "");
 
   return slug || "scenario";
 }

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   lessonContentSchema,
@@ -67,6 +68,14 @@ type SourceMaterialInput = {
   approved?: boolean;
 };
 
+type SupabaseServiceClient = ReturnType<typeof createServiceClient>;
+
+const sourceMaterialInputSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  sourceText: z.string().trim().min(1).max(20000),
+  approved: z.boolean().optional()
+});
+
 export type CreateLessonInput = {
   title: string;
   summary: string;
@@ -130,6 +139,20 @@ function assertSupabaseData<T>(data: T | null, action: string): asserts data is 
   if (!data) {
     throw new Error(`${action}: no data returned`);
   }
+}
+
+async function deleteCreatedLessonAfterFailure(
+  supabase: SupabaseServiceClient,
+  lessonId: string,
+  cause: unknown
+): Promise<never> {
+  const { error } = await supabase.from("lessons").delete().eq("id", lessonId);
+
+  if (error) {
+    throw new Error(`Failed to create draft lesson and cleanup failed: ${error.message}`, { cause });
+  }
+
+  throw cause;
 }
 
 function mapLessonRow(row: LessonRow): LessonRecord {
@@ -293,7 +316,7 @@ export async function getStudioLesson(id: string) {
   return mapStudioLesson(lesson, content, sourceMaterials, reviewChecklist);
 }
 
-export async function createDraftLesson(input: CreateLessonInput) {
+export async function createDraftLesson(input: CreateLessonInput): Promise<StudioLesson> {
   const supabase = createServiceClient();
   const metadata = lessonMetadataSchema.parse({
     title: input.title,
@@ -311,6 +334,7 @@ export async function createDraftLesson(input: CreateLessonInput) {
     publisherDisplayName: input.publisherDisplayName ?? "Community Financial Learning Lab"
   });
   const content = lessonContentSchema.parse(input.content);
+  const sourceMaterials = z.array(sourceMaterialInputSchema).parse(input.sourceMaterials);
 
   const { data: lessonData, error: lessonError } = await supabase
     .from("lessons")
@@ -336,35 +360,45 @@ export async function createDraftLesson(input: CreateLessonInput) {
   const lesson = lessonData as LessonRow | null;
   assertSupabaseData(lesson, "Failed to create draft lesson");
 
-  if (input.sourceMaterials.length > 0) {
-    const { error: sourceError } = await supabase.from("source_materials").insert(
-      input.sourceMaterials.map((source) => ({
-        lesson_id: lesson.id,
-        title: source.title,
-        source_text: source.sourceText,
-        approved: source.approved ?? true
-      }))
-    );
+  try {
+    if (sourceMaterials.length > 0) {
+      const { error: sourceError } = await supabase.from("source_materials").insert(
+        sourceMaterials.map((source) => ({
+          lesson_id: lesson.id,
+          title: source.title,
+          source_text: source.sourceText,
+          approved: source.approved ?? true
+        }))
+      );
 
-    assertSupabaseSuccess(sourceError, "Failed to create source materials");
+      assertSupabaseSuccess(sourceError, "Failed to create source materials");
+    }
+
+    const { error: contentError } = await supabase.from("lesson_content").insert({
+      lesson_id: lesson.id,
+      content,
+      generation_model: input.generationModel ?? null,
+      generation_warnings: input.generationWarnings ?? []
+    });
+
+    assertSupabaseSuccess(contentError, "Failed to create lesson content");
+
+    const { error: reviewError } = await supabase.from("review_checklists").insert({
+      lesson_id: lesson.id
+    });
+
+    assertSupabaseSuccess(reviewError, "Failed to create review checklist");
+
+    const createdLesson = await getStudioLesson(lesson.id);
+
+    if (!createdLesson) {
+      throw new Error("Failed to fetch created draft lesson");
+    }
+
+    return createdLesson;
+  } catch (error) {
+    return deleteCreatedLessonAfterFailure(supabase, lesson.id, error);
   }
-
-  const { error: contentError } = await supabase.from("lesson_content").insert({
-    lesson_id: lesson.id,
-    content,
-    generation_model: input.generationModel ?? null,
-    generation_warnings: input.generationWarnings ?? []
-  });
-
-  assertSupabaseSuccess(contentError, "Failed to create lesson content");
-
-  const { error: reviewError } = await supabase.from("review_checklists").insert({
-    lesson_id: lesson.id
-  });
-
-  assertSupabaseSuccess(reviewError, "Failed to create review checklist");
-
-  return getStudioLesson(lesson.id);
 }
 
 export async function publicSlugExists(candidate: string) {
