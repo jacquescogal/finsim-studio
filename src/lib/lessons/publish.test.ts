@@ -55,4 +55,22 @@ describe("canPublishLesson", () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("All review checklist items must be completed.");
   });
+
+  it("blocks missing checklist items at runtime", () => {
+    const partialChecklist = {
+      sourceApproved: true,
+      noPersonalizedAdvice: true,
+      noProductRecommendation: true
+    };
+
+    const result = canPublishLesson({
+      metadata: sampleLessonMetadata,
+      content: sampleLessonContent,
+      sourceText: "Approved source text with enough detail to support the lesson.",
+      checklist: partialChecklist as never
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("All review checklist items must be completed.");
+  });
 });

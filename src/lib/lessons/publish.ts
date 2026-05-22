@@ -25,6 +25,18 @@ export type PublishInput = {
   checklist: ReviewChecklist;
 };
 
+const reviewChecklistKeys = [
+  "sourceApproved",
+  "noPersonalizedAdvice",
+  "noProductRecommendation",
+  "claimsSupported",
+  "audienceAppropriate",
+  "disclaimerPresent",
+  "respectfulFeedback",
+  "publicMetadataAccurate",
+  "warningsAcknowledged"
+] as const;
+
 export function canPublishLesson(input: PublishInput) {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -38,7 +50,9 @@ export function canPublishLesson(input: PublishInput) {
     errors.push("Approved source material is required.");
   }
 
-  const checklistComplete = Object.values(input.checklist).every(Boolean);
+  const checklistComplete = reviewChecklistKeys.every(
+    (key) => input.checklist[key] === true
+  );
   if (!checklistComplete) errors.push("All review checklist items must be completed.");
 
   if (content.success) {
