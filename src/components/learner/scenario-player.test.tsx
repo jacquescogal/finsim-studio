@@ -50,6 +50,20 @@ describe("ScenarioPlayer", () => {
     });
   });
 
+  it("does not record duplicate learner sessions after completion", async () => {
+    render(<ScenarioPlayer lessonId={lessonId} content={sampleLessonContent} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Check with a trusted source first" }));
+    const terminalChoice = screen.getByRole("button", { name: "Continue" });
+    fireEvent.click(terminalChoice);
+    fireEvent.click(terminalChoice);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+    expect(terminalChoice).toBeDisabled();
+  });
+
   it("displays knowledge checks, reflection prompts, and disclaimer", () => {
     render(<ScenarioPlayer lessonId={lessonId} content={sampleLessonContent} />);
 

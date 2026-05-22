@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sampleLessonContent, sampleLessonMetadata } from "@/lib/lessons/sample";
 import ScenarioPage from "./page";
 
@@ -41,6 +41,11 @@ function publishedLesson() {
 }
 
 describe("ScenarioPage", () => {
+  beforeEach(() => {
+    repositoryMocks.getPublishedLessonBySlug.mockReset();
+    navigationMocks.notFound.mockClear();
+  });
+
   it("renders an unlisted published lesson by direct slug", async () => {
     repositoryMocks.getPublishedLessonBySlug.mockResolvedValueOnce(publishedLesson());
 
@@ -59,5 +64,12 @@ describe("ScenarioPage", () => {
 
     await expect(ScenarioPage({ params: Promise.resolve({ slug: "missing" }) })).rejects.toThrow("NEXT_NOT_FOUND");
     expect(navigationMocks.notFound).toHaveBeenCalled();
+  });
+
+  it("does not mask repository failures as not found", async () => {
+    repositoryMocks.getPublishedLessonBySlug.mockRejectedValueOnce(new Error("database unavailable"));
+
+    await expect(ScenarioPage({ params: Promise.resolve({ slug: "checking-before-acting" }) })).rejects.toThrow("database unavailable");
+    expect(navigationMocks.notFound).not.toHaveBeenCalled();
   });
 });

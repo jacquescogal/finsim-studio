@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import type { LessonChoice, LessonContent } from "@/lib/lessons/schema";
 
 type ScenarioPlayerProps = {
@@ -19,7 +19,7 @@ type KnowledgeCheckResult = {
 
 function optionButtonClass(isSelected: boolean) {
   return [
-    "w-full rounded-md border px-4 py-3 text-left text-sm transition",
+    "w-full rounded-md border px-4 py-3 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60",
     isSelected
       ? "border-primary bg-muted"
       : "border-border bg-background hover:border-primary hover:bg-muted"
@@ -50,6 +50,7 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
   const [knowledgeAnswers, setKnowledgeAnswers] = useState<KnowledgeCheckState>({});
   const [choices, setChoices] = useState<LearnerChoice[]>([]);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const completionSubmittedRef = useRef(false);
 
   const sceneIndexById = useMemo(
     () => new Map(content.scenes.map((scene, index) => [scene.id, index])),
@@ -85,6 +86,10 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
   }
 
   function choose(choice: LessonChoice) {
+    if (isComplete || completionSubmittedRef.current) {
+      return;
+    }
+
     const nextChoices = [...choices, { sceneId: currentScene.id, choiceId: choice.id }];
     setChoices(nextChoices);
     setSelectedChoice(choice);
@@ -95,6 +100,7 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
       return;
     }
 
+    completionSubmittedRef.current = true;
     setIsComplete(true);
     void recordCompletion(nextChoices);
   }
@@ -104,6 +110,7 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
   }
 
   function replay() {
+    completionSubmittedRef.current = false;
     setCurrentSceneId(content.scenes[0]?.id);
     setSelectedChoice(null);
     setIsComplete(false);
@@ -132,6 +139,7 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
               type="button"
               className={optionButtonClass(selectedChoice?.id === choice.id)}
               onClick={() => choose(choice)}
+              disabled={isComplete}
             >
               {choice.label}
             </button>

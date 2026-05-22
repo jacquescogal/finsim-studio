@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ScenarioPlayPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const lesson = await getPublishedLessonBySlug(slug).catch(() => null);
+  const lesson = await getPublishedLessonBySlug(slug);
 
   if (!lesson) {
     notFound();
