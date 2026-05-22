@@ -10,7 +10,7 @@ create table if not exists public.lessons (
   language text not null default 'en',
   difficulty text not null check (difficulty in ('introductory', 'standard', 'advanced')),
   target_audience text not null check (target_audience in ('youth', 'adult', 'older_adult', 'general')),
-  status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
+  status text not null default 'draft' check (status in ('draft', 'review', 'published', 'archived')),
   visibility text not null default 'private' check (visibility in ('private', 'unlisted', 'public')),
   public_slug text unique,
   constraint lessons_public_slug_format_check

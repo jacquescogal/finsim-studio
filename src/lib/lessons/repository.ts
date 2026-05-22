@@ -256,6 +256,7 @@ export async function listStudioLessons() {
   const { data, error } = await supabase
     .from("lessons")
     .select("*")
+    .in("status", ["draft", "review", "published"])
     .order("updated_at", { ascending: false });
 
   assertSupabaseSuccess(error, "Failed to list studio lessons");

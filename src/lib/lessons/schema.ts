@@ -6,7 +6,7 @@ const nonBlankString = (max: number) => boundedText(1, max);
 export const targetAudienceSchema = z.enum(["youth", "adult", "older_adult", "general"]);
 export const difficultySchema = z.enum(["introductory", "standard", "advanced"]);
 export const visibilitySchema = z.enum(["private", "unlisted", "public"]);
-export const statusSchema = z.enum(["draft", "published", "archived"]);
+export const statusSchema = z.enum(["draft", "review", "published", "archived"]);
 
 export const choiceSchema = z.object({
   id: nonBlankString(120),

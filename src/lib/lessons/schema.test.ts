@@ -8,6 +8,10 @@ describe("lesson schemas", () => {
     expect(lessonContentSchema.parse(sampleLessonContent)).toEqual(sampleLessonContent);
   });
 
+  it("accepts lessons in review status", () => {
+    expect(lessonMetadataSchema.parse({ ...sampleLessonMetadata, status: "review" })).toMatchObject({ status: "review" });
+  });
+
   it("rejects a scene with more than three choices", () => {
     const invalid = structuredClone(sampleLessonContent);
     invalid.scenes[0].choices = [
