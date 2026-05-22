@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -37,7 +38,12 @@ export function GenerationForm() {
       return;
     }
 
-    router.push(`/studio/lessons/` as Route);
+    if (typeof payload.lessonId !== "string" || payload.lessonId.length === 0) {
+      setError("The generated lesson was not returned.");
+      return;
+    }
+
+    router.push(`/studio/lessons/${payload.lessonId}` as Route);
   }
 
   return (
