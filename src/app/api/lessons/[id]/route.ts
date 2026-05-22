@@ -18,7 +18,10 @@ const checklistSchema = z
     publicMetadataAccurate: z.boolean().optional(),
     warningsAcknowledged: z.boolean().optional()
   })
-  .strict();
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "No checklist updates provided."
+  });
 
 const updateLessonRequestSchema = z
   .object({
@@ -78,10 +81,6 @@ export async function PATCH(
 
     if (body.checklist) {
       const checklistValues = mapChecklistColumns(body.checklist);
-
-      if (Object.keys(checklistValues).length === 0) {
-        throw new Error("No checklist updates provided.");
-      }
 
       await updateReviewChecklist(id, checklistValues);
     }

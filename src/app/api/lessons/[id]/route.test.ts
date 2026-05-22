@@ -67,4 +67,15 @@ describe("lesson update route", () => {
     expect(repositoryMocks.updateLessonContent).not.toHaveBeenCalled();
     expect(repositoryMocks.updateReviewChecklist).not.toHaveBeenCalled();
   });
+
+  it("rejects an empty checklist before applying content updates", async () => {
+    const response = await PATCH(patchRequest({ content: sampleLessonContent, checklist: {} }), {
+      params: Promise.resolve({ id: "lesson-1" })
+    });
+
+    await expect(response.json()).resolves.toEqual({ error: "No checklist updates provided." });
+    expect(response.status).toBe(400);
+    expect(repositoryMocks.updateLessonContent).not.toHaveBeenCalled();
+    expect(repositoryMocks.updateReviewChecklist).not.toHaveBeenCalled();
+  });
 });
