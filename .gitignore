@@ -1,0 +1,10 @@
+.superpowers/
+.env
+.env.local
+node_modules/
+.next/
+dist/
+coverage/
+test-results/
+playwright-report/
+tsconfig.tsbuildinfo
