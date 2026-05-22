@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { Route } from "next";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function PublishPanel({
   lessonId,
@@ -43,20 +47,29 @@ export function PublishPanel({
   const scenarioHref = publishedSlug ? (`/scenarios/${publishedSlug}` as Route) : null;
 
   return (
-    <section className="rounded-md border p-4">
-      <h2 className="font-semibold">Publish</h2>
-      <label className="mt-4 grid gap-2 text-sm">
-        <span>Visibility</span>
-        <select className="rounded-md border px-3 py-2" value={selectedVisibility} onChange={(event) => setSelectedVisibility(event.target.value as "public" | "unlisted")}>
-          <option value="public">Public library</option>
-          <option value="unlisted">Unlisted link</option>
-        </select>
-      </label>
-      <button className="mt-4 min-h-[44px] w-full rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60" onClick={publish} disabled={isPublishing}>
-        {isPublishing ? "Publishing..." : status === "published" ? "Update publish settings" : "Publish lesson"}
-      </button>
-      {scenarioHref ? <Link className="mt-3 block text-sm underline" href={scenarioHref}>Open public lesson</Link> : null}
-      {message ? <p className={message === "Published." ? "mt-3 text-sm text-muted-foreground" : "mt-3 text-sm text-red-700"}>{message}</p> : null}
-    </section>
+    <Card className="rounded-md shadow-sm">
+      <CardHeader className="p-4 pb-0">
+        <h2 className="text-base font-semibold tracking-tight">Publish</h2>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="grid gap-2">
+          <Label htmlFor="publish-visibility">Visibility</Label>
+          <Select value={selectedVisibility} onValueChange={(value) => setSelectedVisibility(value as "public" | "unlisted")}>
+            <SelectTrigger id="publish-visibility">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="public">Public library</SelectItem>
+              <SelectItem value="unlisted">Unlisted link</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button className="mt-4 min-h-[44px] w-full" onClick={publish} disabled={isPublishing}>
+          {isPublishing ? "Publishing..." : status === "published" ? "Update publish settings" : "Publish lesson"}
+        </Button>
+        {scenarioHref ? <Link className="mt-3 block text-sm underline" href={scenarioHref}>Open public lesson</Link> : null}
+        {message ? <p className={message === "Published." ? "mt-3 text-sm text-muted-foreground" : "mt-3 text-sm text-red-700"}>{message}</p> : null}
+      </CardContent>
+    </Card>
   );
 }

@@ -4,6 +4,11 @@ import React from "react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export function GenerationForm() {
   const router = useRouter();
@@ -48,46 +53,56 @@ export function GenerationForm() {
 
   return (
     <form onSubmit={onSubmit} className="mt-6 grid gap-5">
-      <label className="grid gap-2">
-        <span className="font-medium">Topic</span>
-        <input className="rounded-md border px-3 py-2" name="topic" defaultValue="Avoiding suspicious investment messages" required />
-      </label>
+      <div className="grid gap-2">
+        <Label htmlFor="topic">Topic</Label>
+        <Input id="topic" name="topic" defaultValue="Avoiding suspicious investment messages" required />
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <label className="grid gap-2">
-          <span className="font-medium">Audience</span>
-          <select className="rounded-md border px-3 py-2" name="targetAudience" defaultValue="older_adult">
-            <option value="youth">Youth learner</option>
-            <option value="adult">Adult learner</option>
-            <option value="older_adult">Older adult learner</option>
-            <option value="general">General audience</option>
-          </select>
-        </label>
-        <label className="grid gap-2">
-          <span className="font-medium">Difficulty</span>
-          <select className="rounded-md border px-3 py-2" name="difficulty" defaultValue="introductory">
-            <option value="introductory">Introductory</option>
-            <option value="standard">Standard</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </label>
-        <label className="grid gap-2">
-          <span className="font-medium">Duration</span>
-          <input className="rounded-md border px-3 py-2" name="durationMinutes" type="number" min={5} max={90} defaultValue={20} required />
-        </label>
+        <div className="grid gap-2">
+          <Label htmlFor="targetAudience">Audience</Label>
+          <Select name="targetAudience" defaultValue="older_adult">
+            <SelectTrigger id="targetAudience">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="youth">Youth learner</SelectItem>
+              <SelectItem value="adult">Adult learner</SelectItem>
+              <SelectItem value="older_adult">Older adult learner</SelectItem>
+              <SelectItem value="general">General audience</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="difficulty">Difficulty</Label>
+          <Select name="difficulty" defaultValue="introductory">
+            <SelectTrigger id="difficulty">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="introductory">Introductory</SelectItem>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="durationMinutes">Duration</Label>
+          <Input id="durationMinutes" name="durationMinutes" type="number" min={5} max={90} defaultValue={20} required />
+        </div>
       </div>
       <input type="hidden" name="language" value="en" />
-      <label className="grid gap-2">
-        <span className="font-medium">Source title</span>
-        <input className="rounded-md border px-3 py-2" name="sourceTitle" defaultValue="Approved facilitator source" required />
-      </label>
-      <label className="grid gap-2">
-        <span className="font-medium">Approved source text</span>
-        <textarea className="min-h-56 rounded-md border px-3 py-2" name="sourceText" required />
-      </label>
+      <div className="grid gap-2">
+        <Label htmlFor="sourceTitle">Source title</Label>
+        <Input id="sourceTitle" name="sourceTitle" defaultValue="Approved facilitator source" required />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="sourceText">Approved source text</Label>
+        <Textarea id="sourceText" className="min-h-56" name="sourceText" required />
+      </div>
       {error ? <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-      <button className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60" disabled={isGenerating}>
+      <Button className="min-h-[44px]" disabled={isGenerating}>
         {isGenerating ? "Generating..." : "Generate storyboard"}
-      </button>
+      </Button>
     </form>
   );
 }

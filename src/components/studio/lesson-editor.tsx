@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import { z } from "zod";
 import { lessonContentSchema, type LessonContent } from "@/lib/lessons/schema";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Message = { tone: "ok" | "error"; text: string } | null;
 
@@ -64,18 +67,19 @@ export function LessonEditor({ lessonId, initialContent }: { lessonId: string; i
 
   return (
     <div className="mt-6 space-y-4">
-      <label className="grid gap-2">
-        <span className="font-medium">Lesson JSON</span>
-        <textarea
-          className="min-h-[620px] rounded-md border bg-background px-3 py-2 font-mono text-sm leading-6"
+      <div className="grid gap-2">
+        <Label htmlFor="lesson-json">Lesson JSON</Label>
+        <Textarea
+          id="lesson-json"
+          className="min-h-[620px] font-mono text-sm leading-6"
           value={jsonText}
           onChange={(event) => setJsonText(event.target.value)}
           spellCheck={false}
         />
-      </label>
-      <button className="min-h-[44px] rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60" onClick={save} disabled={isSaving}>
+      </div>
+      <Button className="min-h-[44px]" onClick={save} disabled={isSaving}>
         {isSaving ? "Saving..." : "Save changes"}
-      </button>
+      </Button>
       {message ? <p className={message.tone === "ok" ? "text-sm text-muted-foreground" : "text-sm text-red-700"}>{message.text}</p> : null}
     </div>
   );

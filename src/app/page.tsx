@@ -2,6 +2,8 @@ import React from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { listPublicLessons } from "@/lib/lessons/repository";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -25,22 +27,18 @@ export default async function HomePage() {
             if (!slug) return null;
 
             return (
-              <Link
-                key={lesson.id}
-                href={`/scenarios/${slug}` as Route}
-                className="rounded-md border bg-card p-4 hover:border-primary"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-medium">{lesson.metadata.title}</h2>
-                  <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-                    {lesson.metadata.difficulty}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{lesson.metadata.summary}</p>
-                <div className="mt-3 text-xs text-muted-foreground">
-                  {lesson.metadata.category} · {lesson.metadata.publisherDisplayName}
-                </div>
-              </Link>
+              <Card key={lesson.id} className="rounded-md shadow-sm transition-colors hover:border-primary">
+                <Link href={`/scenarios/${slug}` as Route} className="block p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-medium">{lesson.metadata.title}</h2>
+                    <Badge variant="secondary">{lesson.metadata.difficulty}</Badge>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{lesson.metadata.summary}</p>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    {lesson.metadata.category} · {lesson.metadata.publisherDisplayName}
+                  </div>
+                </Link>
+              </Card>
             );
           })}
         </div>

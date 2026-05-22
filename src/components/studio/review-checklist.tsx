@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import type { CheckedState } from "@radix-ui/react-checkbox";
 import type { StudioLesson } from "@/lib/lessons/repository";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const checklistItems = [
   ["sourceApproved", "Source material is approved"],
@@ -35,7 +39,8 @@ export function ReviewChecklist({ lessonId, initialChecklist }: { lessonId: stri
   const [values, setValues] = useState<ChecklistValues>(() => initialValues(initialChecklist));
   const [error, setError] = useState<string | null>(null);
 
-  async function toggle(key: keyof ChecklistValues, checked: boolean) {
+  async function toggle(key: keyof ChecklistValues, checked: CheckedState) {
+    if (checked === "indeterminate") return;
     const next = { ...values, [key]: checked };
     setValues(next);
     setError(null);
@@ -52,17 +57,21 @@ export function ReviewChecklist({ lessonId, initialChecklist }: { lessonId: stri
   }
 
   return (
-    <section className="rounded-md border p-4">
-      <h2 className="font-semibold">Review Checklist</h2>
-      <div className="mt-4 grid gap-3">
+    <Card className="rounded-md shadow-sm">
+      <CardHeader className="p-4 pb-0">
+        <h2 className="text-base font-semibold tracking-tight">Review Checklist</h2>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4">
         {checklistItems.map(([key, label]) => (
-          <label key={key} className="flex gap-3 text-sm">
-            <input type="checkbox" checked={values[key]} onChange={(event) => toggle(key, event.target.checked)} />
-            <span>{label}</span>
-          </label>
+          <div key={key} className="flex items-start gap-3">
+            <Checkbox id={key} checked={values[key]} onCheckedChange={(checked) => toggle(key, checked)} />
+            <Label htmlFor={key} className="leading-5 text-muted-foreground">
+              {label}
+            </Label>
+          </div>
         ))}
-      </div>
-      {error ? <p className="mt-3 text-sm text-red-700">{error}</p> : null}
-    </section>
+        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      </CardContent>
+    </Card>
   );
 }

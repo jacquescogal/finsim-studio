@@ -2,6 +2,10 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import type { LessonChoice, LessonContent } from "@/lib/lessons/schema";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 type ScenarioPlayerProps = {
   lessonId: string;
@@ -19,10 +23,8 @@ type KnowledgeCheckResult = {
 
 function optionButtonClass(isSelected: boolean) {
   return [
-    "w-full rounded-md border px-4 py-3 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60",
-    isSelected
-      ? "border-primary bg-muted"
-      : "border-border bg-background hover:border-primary hover:bg-muted"
+    "h-auto min-h-[44px] w-full justify-start whitespace-normal px-4 py-3 text-left text-sm",
+    isSelected ? "border-primary bg-muted" : "hover:border-primary hover:bg-muted"
   ].join(" ");
 }
 
@@ -125,66 +127,73 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="rounded-md border bg-card p-5">
-        <div className="text-sm text-muted-foreground">
-          Scene {currentSceneIndex + 1} of {content.scenes.length}
-        </div>
-        <h2 className="mt-2 text-2xl font-semibold">{currentScene.title}</h2>
-        <p className="mt-4 leading-7 text-card-foreground">{currentScene.body}</p>
+      <Card className="rounded-md shadow-sm">
+        <CardHeader className="p-5 pb-0">
+          <Badge variant="secondary" className="w-fit">Scene {currentSceneIndex + 1} of {content.scenes.length}</Badge>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight">{currentScene.title}</h2>
+        </CardHeader>
+        <CardContent className="p-5">
+          <p className="text-xl leading-8 text-card-foreground">{currentScene.body}</p>
 
-        <div className="mt-6 grid gap-3">
-          {currentScene.choices.map((choice) => (
-            <button
-              key={choice.id}
-              type="button"
-              className={optionButtonClass(selectedChoice?.id === choice.id)}
-              onClick={() => choose(choice)}
-              disabled={isComplete}
-            >
-              {choice.label}
-            </button>
-          ))}
-        </div>
-
-        {selectedChoice ? (
-          <div className="mt-5 rounded-md border bg-muted p-4">
-            <div className="text-sm font-medium">Choice feedback</div>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedChoice.feedback}</p>
+          <div className="mt-6 grid gap-3">
+            {currentScene.choices.map((choice) => (
+              <Button
+                key={choice.id}
+                type="button"
+                variant="outline"
+                className={optionButtonClass(selectedChoice?.id === choice.id)}
+                onClick={() => choose(choice)}
+                disabled={isComplete}
+              >
+                {choice.label}
+              </Button>
+            ))}
           </div>
-        ) : null}
 
-        {isComplete ? (
-          <div className="mt-5 rounded-md border border-primary bg-background p-4 text-sm">
-            <p className="font-medium">Scenario complete</p>
-            <button className="mt-3 min-h-[44px] rounded-md border px-4 py-2" type="button" onClick={replay}>
-              Replay
-            </button>
-            {sessionError ? <p className="mt-3 text-red-700">{sessionError}</p> : null}
-          </div>
-        ) : null}
-      </section>
+          {selectedChoice ? (
+            <div className="mt-5 rounded-md bg-muted p-4">
+              <div className="text-sm font-medium">Choice feedback</div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{selectedChoice.feedback}</p>
+            </div>
+          ) : null}
+
+          {isComplete ? (
+            <div className="mt-5 rounded-md bg-muted p-4 text-sm">
+              <p className="font-medium">Scenario complete</p>
+              <Button className="mt-3 min-h-[44px]" variant="outline" type="button" onClick={replay}>
+                Replay
+              </Button>
+              {sessionError ? <p className="mt-3 text-red-700">{sessionError}</p> : null}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <aside className="space-y-4">
-        <section className="rounded-md border bg-card p-4">
-          <h2 className="text-base font-semibold">Knowledge checks</h2>
-          <div className="mt-4 space-y-5">
-            {content.knowledgeChecks.map((check) => {
+        <Card className="rounded-md shadow-sm">
+          <CardHeader className="p-4 pb-0">
+            <h2 className="text-base font-semibold tracking-tight">Knowledge checks</h2>
+          </CardHeader>
+          <CardContent className="space-y-5 p-4">
+            {content.knowledgeChecks.map((check, index) => {
               const selectedAnswer = knowledgeAnswers[check.id];
               const answeredCorrectly = selectedAnswer === check.correctOption;
 
               return (
                 <div key={check.id} className="space-y-3">
+                  {index > 0 ? <Separator /> : null}
                   <p className="text-sm font-medium">{check.question}</p>
                   <div className="grid gap-2">
                     {check.options.map((option) => (
-                      <button
+                      <Button
                         key={option}
                         type="button"
+                        variant="outline"
                         className={optionButtonClass(selectedAnswer === option)}
                         onClick={() => chooseKnowledgeAnswer(check.id, option)}
                       >
                         {option}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   {selectedAnswer ? (
@@ -196,24 +205,32 @@ export function ScenarioPlayer({ lessonId, content }: ScenarioPlayerProps) {
                 </div>
               );
             })}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
         {content.reflectionPrompts.length > 0 ? (
-          <section className="rounded-md border bg-card p-4">
-            <h2 className="text-base font-semibold">Reflection</h2>
-            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-              {content.reflectionPrompts.map((prompt) => (
-                <li key={prompt}>{prompt}</li>
-              ))}
-            </ul>
-          </section>
+          <Card className="rounded-md shadow-sm">
+            <CardHeader className="p-4 pb-0">
+              <h2 className="text-base font-semibold tracking-tight">Reflection</h2>
+            </CardHeader>
+            <CardContent className="p-4">
+              <ul className="space-y-2 text-sm leading-6 text-muted-foreground">
+                {content.reflectionPrompts.map((prompt) => (
+                  <li key={prompt}>{prompt}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         ) : null}
 
-        <section className="rounded-md border bg-card p-4">
-          <h2 className="text-base font-semibold">Disclaimer</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{content.disclaimer}</p>
-        </section>
+        <Card className="rounded-md shadow-sm">
+          <CardHeader className="p-4 pb-0">
+            <h2 className="text-base font-semibold tracking-tight">Disclaimer</h2>
+          </CardHeader>
+          <CardContent className="p-4">
+            <p className="text-sm leading-6 text-muted-foreground">{content.disclaimer}</p>
+          </CardContent>
+        </Card>
       </aside>
     </div>
   );
