@@ -1,32 +1,35 @@
 import { z } from "zod";
 
+const boundedText = (min: number, max: number) => z.string().trim().min(min).max(max);
+const nonBlankString = (max: number) => boundedText(1, max);
+
 export const targetAudienceSchema = z.enum(["youth", "adult", "older_adult", "general"]);
 export const difficultySchema = z.enum(["introductory", "standard", "advanced"]);
 export const visibilitySchema = z.enum(["private", "unlisted", "public"]);
 export const statusSchema = z.enum(["draft", "published", "archived"]);
 
 export const choiceSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().min(1).max(160),
-  feedback: z.string().min(1).max(500),
-  nextSceneId: z.string().min(1).nullable()
+  id: nonBlankString(120),
+  label: nonBlankString(160),
+  feedback: nonBlankString(500),
+  nextSceneId: nonBlankString(120).nullable()
 });
 
 export const sceneSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1).max(120),
-  body: z.string().min(1).max(900),
-  visualPrompt: z.string().min(1).max(240).optional(),
-  sourceRefs: z.array(z.string().min(1)).max(12).default([]),
+  id: nonBlankString(120),
+  title: nonBlankString(120),
+  body: nonBlankString(900),
+  visualPrompt: nonBlankString(240).optional(),
+  sourceRefs: z.array(nonBlankString(120)).max(12).default([]),
   choices: z.array(choiceSchema).min(1).max(3)
 });
 
 export const knowledgeCheckSchema = z.object({
-  id: z.string().min(1),
-  question: z.string().min(1).max(240),
-  options: z.array(z.string().min(1).max(140)).min(2).max(4),
-  correctOption: z.string().min(1),
-  feedback: z.string().min(1).max(400)
+  id: nonBlankString(120),
+  question: nonBlankString(240),
+  options: z.array(nonBlankString(140)).min(2).max(4),
+  correctOption: nonBlankString(140),
+  feedback: nonBlankString(400)
 }).superRefine((knowledgeCheck, context) => {
   if (!knowledgeCheck.options.includes(knowledgeCheck.correctOption)) {
     context.addIssue({
@@ -36,7 +39,7 @@ export const knowledgeCheckSchema = z.object({
     });
   }
 
-  const optionSet = new Set(knowledgeCheck.options);
+  const optionSet = new Set(knowledgeCheck.options.map((option) => option.trim()));
   if (optionSet.size !== knowledgeCheck.options.length) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -47,20 +50,20 @@ export const knowledgeCheckSchema = z.object({
 });
 
 export const lessonContentSchema = z.object({
-  title: z.string().min(1).max(120),
-  summary: z.string().min(1).max(400),
-  sourceSummary: z.string().min(1).max(700),
-  learningObjectives: z.array(z.string().min(1).max(180)).min(1).max(5),
+  title: nonBlankString(120),
+  summary: nonBlankString(400),
+  sourceSummary: nonBlankString(700),
+  learningObjectives: z.array(nonBlankString(180)).min(1).max(5),
   targetAudience: targetAudienceSchema,
-  readingLevel: z.string().min(1).max(80),
-  category: z.string().min(1).max(80),
-  tags: z.array(z.string().min(1).max(40)).max(8),
-  characters: z.array(z.string().min(1).max(120)).max(5),
+  readingLevel: nonBlankString(80),
+  category: nonBlankString(80),
+  tags: z.array(nonBlankString(40)).max(8),
+  characters: z.array(nonBlankString(120)).max(5),
   scenes: z.array(sceneSchema).min(1).max(8),
-  reflectionPrompts: z.array(z.string().min(1).max(220)).max(4),
+  reflectionPrompts: z.array(nonBlankString(220)).max(4),
   knowledgeChecks: z.array(knowledgeCheckSchema).min(1).max(4),
-  disclaimer: z.string().min(20).max(500),
-  safetyWarnings: z.array(z.string().min(1).max(240)).max(5).default([])
+  disclaimer: boundedText(20, 500),
+  safetyWarnings: z.array(nonBlankString(240)).max(5).default([])
 }).superRefine((lesson, context) => {
   const sceneIds = new Set<string>();
   const choiceIds = new Set<string>();
@@ -101,19 +104,19 @@ export const lessonContentSchema = z.object({
 });
 
 export const lessonMetadataSchema = z.object({
-  title: z.string().min(1).max(120),
-  summary: z.string().min(1).max(400),
-  topic: z.string().min(1).max(120),
-  category: z.string().min(1).max(80),
-  tags: z.array(z.string().min(1).max(40)).max(8),
-  language: z.string().min(2).max(20),
+  title: nonBlankString(120),
+  summary: nonBlankString(400),
+  topic: nonBlankString(120),
+  category: nonBlankString(80),
+  tags: z.array(nonBlankString(40)).max(8),
+  language: boundedText(2, 20),
   difficulty: difficultySchema,
   targetAudience: targetAudienceSchema,
   status: statusSchema,
   visibility: visibilitySchema,
   publicSlug: z.string().min(1).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).nullable(),
-  disclaimer: z.string().min(20).max(500),
-  publisherDisplayName: z.string().min(1).max(120)
+  disclaimer: boundedText(20, 500),
+  publisherDisplayName: nonBlankString(120)
 }).superRefine((metadata, context) => {
   if (metadata.status === "published" && metadata.visibility !== "private" && metadata.publicSlug === null) {
     context.addIssue({

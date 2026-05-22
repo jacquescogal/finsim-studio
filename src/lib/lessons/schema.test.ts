@@ -23,6 +23,31 @@ describe("lesson schemas", () => {
     expect(() => lessonContentSchema.parse({ ...sampleLessonContent, disclaimer: "" })).toThrow();
   });
 
+  it("rejects a whitespace-only educational disclaimer", () => {
+    const whitespaceDisclaimer = " ".repeat(20);
+
+    expect(() =>
+      lessonContentSchema.parse({ ...sampleLessonContent, disclaimer: whitespaceDisclaimer })
+    ).toThrow();
+    expect(() =>
+      lessonMetadataSchema.parse({ ...sampleLessonMetadata, disclaimer: whitespaceDisclaimer })
+    ).toThrow();
+  });
+
+  it("rejects a whitespace-only scene title", () => {
+    const invalid = structuredClone(sampleLessonContent);
+    invalid.scenes[0].title = "   ";
+
+    expect(() => lessonContentSchema.parse(invalid)).toThrow();
+  });
+
+  it("rejects a whitespace-only choice label", () => {
+    const invalid = structuredClone(sampleLessonContent);
+    invalid.scenes[0].choices[0].label = "   ";
+
+    expect(() => lessonContentSchema.parse(invalid)).toThrow();
+  });
+
   it("rejects a knowledge check when correctOption is not one of the options", () => {
     const invalid = structuredClone(sampleLessonContent);
     invalid.knowledgeChecks[0].correctOption = "Send money immediately";
@@ -35,6 +60,17 @@ describe("lesson schemas", () => {
     invalid.knowledgeChecks[0].options = [
       "Guaranteed high return",
       "Guaranteed high return",
+      "Ask someone trusted"
+    ];
+
+    expect(() => lessonContentSchema.parse(invalid)).toThrow();
+  });
+
+  it("rejects knowledge check options that duplicate after trimming", () => {
+    const invalid = structuredClone(sampleLessonContent);
+    invalid.knowledgeChecks[0].options = [
+      "Guaranteed high return",
+      " Guaranteed high return ",
       "Ask someone trusted"
     ];
 
@@ -79,6 +115,24 @@ describe("lesson schemas", () => {
           publicSlug: null
         })
       ).toThrow();
+    }
+  );
+
+  it.each(["public", "unlisted"] as const)(
+    "accepts a published %s lesson with a valid public slug",
+    (visibility) => {
+      expect(
+        lessonMetadataSchema.parse({
+          ...sampleLessonMetadata,
+          status: "published",
+          visibility,
+          publicSlug: "checking-before-acting"
+        })
+      ).toMatchObject({
+        status: "published",
+        visibility,
+        publicSlug: "checking-before-acting"
+      });
     }
   );
 
