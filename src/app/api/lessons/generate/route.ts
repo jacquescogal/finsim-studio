@@ -4,6 +4,7 @@ import { getOpenAIEnv } from "@/lib/env";
 import { createDraftLesson } from "@/lib/lessons/repository";
 import { difficultySchema, targetAudienceSchema } from "@/lib/lessons/schema";
 import { generateLesson } from "@/lib/openai/generate-lesson";
+import { GENERATION_ERROR_CODE, INVALID_REQUEST_ERROR_CODE, SAVE_ERROR_CODE, mapGenerateLessonError, type GenerateLessonErrorCode } from "./errors";
 
 const generateLessonRequestSchema = z.object({
   topic: z.string().trim().min(1).max(120),
@@ -15,16 +16,31 @@ const generateLessonRequestSchema = z.object({
   sourceText: z.string().trim().min(1).max(20000)
 });
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Failed to generate lesson.";
+function jsonError(error: unknown, code: GenerateLessonErrorCode = GENERATION_ERROR_CODE) {
+  const mapped = mapGenerateLessonError(error, code);
+
+  return NextResponse.json(mapped.body, { status: mapped.status });
 }
 
 export async function POST(request: Request) {
-  try {
-    const input = generateLessonRequestSchema.parse(await request.json());
-    const content = await generateLesson(input);
-    const env = getOpenAIEnv();
+  let input: z.infer<typeof generateLessonRequestSchema>;
 
+  try {
+    input = generateLessonRequestSchema.parse(await request.json());
+  } catch (error) {
+    return jsonError(error, INVALID_REQUEST_ERROR_CODE);
+  }
+
+  let content: Awaited<ReturnType<typeof generateLesson>>;
+
+  try {
+    content = await generateLesson(input);
+  } catch (error) {
+    return jsonError(error, GENERATION_ERROR_CODE);
+  }
+
+  try {
+    const env = getOpenAIEnv();
     const lesson = await createDraftLesson({
       title: content.title,
       summary: content.summary,
@@ -49,6 +65,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ lessonId: lesson.id });
   } catch (error) {
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 400 });
+    return jsonError(error, SAVE_ERROR_CODE);
   }
 }
