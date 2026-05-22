@@ -41,22 +41,23 @@ const reviewChecklistKeys = [
   "warningsAcknowledged"
 ] as const;
 
-export function canPublishLesson(input: PublishInput | RuntimePublishInput) {
+export function canPublishLesson(input: PublishInput | RuntimePublishInput | null | undefined) {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const value = input && typeof input === "object" ? input : {};
 
-  const metadata = lessonMetadataSchema.safeParse(input.metadata);
-  const content = lessonContentSchema.safeParse(input.content);
+  const metadata = lessonMetadataSchema.safeParse(value.metadata);
+  const content = lessonContentSchema.safeParse(value.content);
 
   if (!metadata.success) errors.push("Lesson metadata is invalid.");
   if (!content.success) errors.push("Lesson content is invalid.");
-  const sourceText = typeof input.sourceText === "string" ? input.sourceText : "";
+  const sourceText = typeof value.sourceText === "string" ? value.sourceText : "";
   if (sourceText.trim().length < 40) {
     errors.push("Approved source material is required.");
   }
 
   const checklistComplete = reviewChecklistKeys.every(
-    (key) => input.checklist?.[key] === true
+    (key) => value.checklist?.[key] === true
   );
   if (!checklistComplete) errors.push("All review checklist items must be completed.");
 

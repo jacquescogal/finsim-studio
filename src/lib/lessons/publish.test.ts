@@ -85,4 +85,14 @@ describe("canPublishLesson", () => {
     expect(result.errors).toContain("Approved source material is required.");
     expect(result.errors).toContain("All review checklist items must be completed.");
   });
+
+  it("returns gate errors for null runtime input", () => {
+    const result = canPublishLesson(null as never);
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("Lesson metadata is invalid.");
+    expect(result.errors).toContain("Lesson content is invalid.");
+    expect(result.errors).toContain("Approved source material is required.");
+    expect(result.errors).toContain("All review checklist items must be completed.");
+  });
 });
