@@ -1,6 +1,6 @@
-# Financial Storyboards
+# Scenario Finance Lessons
 
-Phase 1 prototype for facilitator-led financial literacy storyboards.
+Phase 1 prototype for facilitator-led, scenario-based financial lessons.
 
 ## Requirements
 
