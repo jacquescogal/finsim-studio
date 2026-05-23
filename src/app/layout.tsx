@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Scenario Finance Lessons",
+  title: "FinSim Studio",
   description: "Facilitator-led financial literacy scenarios"
 };
 
@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="border-b bg-background">
           <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Link href="/" className="text-lg font-semibold">Scenario Finance Lessons</Link>
+            <Link href="/" className="text-lg font-semibold">FinSim Studio</Link>
             <div className="flex gap-4 text-sm">
               <Link href="/">Library</Link>
               <Link href={"/studio" as Route}>Studio</Link>

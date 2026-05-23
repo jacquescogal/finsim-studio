@@ -1,4 +1,4 @@
-# Scenario Finance Lessons
+# FinSim Studio
 
 Phase 1 prototype for facilitator-led, scenario-based financial lessons.
 
