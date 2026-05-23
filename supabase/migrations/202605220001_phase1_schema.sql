@@ -81,9 +81,13 @@ alter table public.lesson_content enable row level security;
 alter table public.review_checklists enable row level security;
 alter table public.learner_sessions enable row level security;
 
+drop policy if exists "Public can read published visible lessons" on public.lessons;
+
 create policy "Public can read published visible lessons"
   on public.lessons for select
   using (status = 'published' and visibility = 'public');
+
+drop policy if exists "Public can read content for published visible lessons" on public.lesson_content;
 
 create policy "Public can read content for published visible lessons"
   on public.lesson_content for select
